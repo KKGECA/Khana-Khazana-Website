@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu Manager | Khana Khazana</title>
+  <style>
+    :root{--ink:#24231f;--muted:#716f67;--cream:#f7f4ed;--paper:#fffdf9;--saffron:#e85d2a;--leaf:#23604d;--line:#e4dfd4}
+    *{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:15px/1.5 Arial,sans-serif}header{background:var(--ink);color:white;padding:24px 6%;display:flex;justify-content:space-between;align-items:center}header h1{font:700 28px Georgia,serif;margin:0}header span{color:#f0b56a}header a{color:white;text-decoration:none;font-weight:bold}.wrap{max-width:1100px;margin:auto;padding:42px 6%}.intro{display:flex;justify-content:space-between;gap:25px;align-items:end;margin-bottom:30px}.intro h2{font:700 40px/1.1 Georgia,serif;margin:8px 0}.kicker{color:var(--saffron);font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase}.intro p{color:var(--muted);max-width:360px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}.button{border:0;border-radius:6px;padding:12px 17px;background:var(--saffron);color:white;font-weight:bold;cursor:pointer}.button.green{background:var(--leaf)}.button.light{background:white;color:var(--ink);border:1px solid var(--line)}.menu-form{display:grid;gap:12px}.item{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:15px;display:grid;grid-template-columns:55px 1.2fr 1.5fr 95px 1fr 75px;gap:9px;align-items:center}.item input{min-width:0;width:100%;padding:10px;border:1px solid #d8d2c6;border-radius:4px;background:white;font:inherit}.remove{border:1px solid #d9bbb2;background:#fff5f1;color:#b43e27;padding:10px 7px;border-radius:4px;cursor:pointer}.status{min-height:22px;color:var(--leaf);font-weight:bold;margin:15px 0}.note{background:#eee9dc;border-left:4px solid #eab75d;padding:13px 16px;color:var(--muted);font-size:13px;margin-top:28px}.note strong{color:var(--ink)}@media(max-width:760px){.intro{display:block}.intro h2{font-size:34px}.item{grid-template-columns:50px 1fr;gap:8px}.item input:nth-child(n+3),.item button{grid-column:2}.item:before{content:'Icon';font-size:11px;color:var(--muted);align-self:center}.item input:nth-child(2):before{content:''}}
+  </style>
+</head>
+<body>
+  <header><h1>Khana <span>Khazana</span></h1><a href="index.html">View customer page →</a></header>
+  <main class="wrap">
+    <div class="intro"><div><div class="kicker">Owner dashboard</div><h2>Build your menu</h2></div><p>Enter your dishes here once. Customers will see the saved menu on the main page.</p></div>
+    <div class="toolbar"><button class="button" onclick="addItem()">+ Add item</button><button class="button green" onclick="saveLiveMenu()">Update live menu</button><button class="button light" onclick="downloadIndex()">Download updated index</button><button class="button light" onclick="resetMenu()">Reset defaults</button></div>
+    <div id="status" class="status" aria-live="polite"></div><div id="menuForm" class="menu-form"></div>
+    <div class="note"><strong>How it works:</strong> “Update live menu” is immediate when this page and the customer page are opened from the same website. “Download updated index” creates a new standalone file with these menu items built in, ready to upload.</div>
+  </main>
+  <script>
+    const defaults=[{icon:'🍔',name:'Classic Burger',desc:'Fresh, filling and delicious',price:99,category:'Quick bites',image:''},{icon:'🍕',name:'Veg Pizza',desc:'Hot, cheesy and loaded',price:149,category:'Quick bites',image:''},{icon:'🍜',name:'Chowmein',desc:'Wok-tossed with fresh veg',price:89,portions:{Half:59,Full:89},category:'Meals',image:''},{icon:'🥟',name:'Momos',desc:'Steamed or fried your way',price:79,portions:{Half:49,Full:79},category:'Quick bites',image:''},{icon:'🍛',name:'Thali',desc:'A wholesome homestyle meal',price:129,portions:{Half:89,Full:129},category:'Meals',image:''},{icon:'🥤',name:'Cold Drink',desc:'A chilled sip with your meal',price:40,category:'Drinks',image:''}];
+    const savedMenu=JSON.parse(localStorage.getItem('khanaKhazanaMenu')||'null');
+    let menu=savedMenu?savedMenu.map(item=>({...item,...(defaults.find(defaultItem=>defaultItem.name===item.name)?.portions?{portions:defaults.find(defaultItem=>defaultItem.name===item.name).portions}: {})})):defaults.map(item=>({...item}));
+    const form=document.getElementById('menuForm'),status=document.getElementById('status');
+    function esc(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));}
+    function render(){form.innerHTML=menu.map((item,index)=>`<div class="item"><input aria-label="Icon" value="${esc(item.icon)}" oninput="menu[${index}].icon=this.value"><input aria-label="Name" placeholder="Dish name" value="${esc(item.name)}" oninput="menu[${index}].name=this.value"><input aria-label="Description" placeholder="Description" value="${esc(item.desc)}" oninput="menu[${index}].desc=this.value"><input aria-label="Regular price" type="number" min="0" placeholder="Price" value="${esc(item.price)}" oninput="menu[${index}].price=this.value"><input aria-label="Category" placeholder="Category" value="${esc(item.category)}" oninput="menu[${index}].category=this.value"><input aria-label="Half Plate price" type="number" min="0" placeholder="Half price" value="${esc(item.portions?.Half??'')}" oninput="setPortion(${index},'Half',this.value)"><input aria-label="Full Plate price" type="number" min="0" placeholder="Full price" value="${esc(item.portions?.Full??'')}" oninput="setPortion(${index},'Full',this.value)"><button class="remove" onclick="removeItem(${index})">Delete</button></div>`).join('');}
+    function setPortion(index,name,value){if(value===''){if(menu[index].portions)delete menu[index].portions[name];return}menu[index].portions={...(menu[index].portions||{}),[name]:Number(value)};}
+    function addItem(){menu.push({icon:'🍽️',name:'New item',desc:'Tasty and fresh',price:0,category:'Other',image:''});render();status.textContent='New item added.';}
+    function removeItem(index){menu.splice(index,1);render();status.textContent='Item removed. Save when ready.';}
+    function saveLiveMenu(){localStorage.setItem('khanaKhazanaMenu',JSON.stringify(menu));status.textContent='Live menu updated in this browser.';}
+    function resetMenu(){menu=defaults.map(item=>({...item}));render();status.textContent='Defaults restored. Save when ready.';}
+  function downloadIndex(){let source;fetch('index.html').then(response=>{if(!response.ok)throw new Error('Could not read index.html');return response.text();}).then(html=>{let data=`const defaultMenu=${JSON.stringify(menu)};`;source=html.replace(/const defaultMenu=.*?;\s*\n/,data+'\n');if(source===html)throw new Error('Menu data block not found');let blob=new Blob([source],{type:'text/html'}),link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='index.html';link.click();URL.revokeObjectURL(link.href);status.textContent='Updated index.html downloaded.';}).catch(()=>{status.textContent='Download needs the site opened through a local web server.';});}
+    render();
+  </script>
+</body>
+</html>
